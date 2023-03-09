@@ -16,19 +16,19 @@ const MyCourses = {
                     enrollment,
                 }))
             )
-        ).then((coursesRoles) => {
-            // Filter the courses that have not ended and the user's membership is unenrolled.
-            coursesRoles = coursesRoles
-                .filter((courseRole) => !courseRole.course.hasEnded)
-                .concat(
-                    coursesRoles.filter((courseRole) =>
-                        courseRole.enrollment.isUnenrolled()
-                    )
-                );
+        )
+            .then((coursesRoles) => {
+                // Filter the courses that have not ended and the user's membership is unenrolled.
+                const filteredCourses = coursesRoles
+                    .filter((courseRole) => !courseRole.course.hasEnded)
+                    .concat(
+                        coursesRoles.filter((courseRole) =>
+                            courseRole.enrollment.isUnenrolled()
+                        )
+                    );
 
-            // Sort the courses so that unenrolled courses are at the top
-            return coursesRoles
-                .sort((courseA, courseB) =>
+                // Sort the courses so that unenrolled courses are at the top
+                const sortedCourses = filteredCourses.sort((courseA, courseB) =>
                     courseA.enrollment.isUnenrolled() &&
                     courseB.enrollment.isEnrolled
                         ? -1
@@ -36,9 +36,17 @@ const MyCourses = {
                           courseB.enrollment.isUnenrolled()
                         ? 1
                         : 0
-                )
-                .map(({ course }) => course);
-        });
+                );
+
+                return sortedCourses.map(({ course }) => course);
+            })
+            .catch((error) => {
+                console.error(
+                    "An error occurred while fetching course data:",
+                    error
+                );
+                throw error;
+            });
     },
 };
 
@@ -76,10 +84,8 @@ const memberships = [
 MyCourses.courses(courses, memberships)
     .then(function (result) {
         console.log(result);
+        console.log(result.length);
     })
-    .catch(function (error) {
-        console.error(error);
-    });
 
 // Copy over models while figuring out the imports
 // Keep them at the bottom since they get hoisted
