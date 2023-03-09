@@ -1,16 +1,21 @@
-const MyCourses = {
-    courses: (coursesArray, membershipsArray) => {
+class MyCourses {
+    constructor(courses, memberships) {
+        this.courses = courses;
+        this.memberships = memberships;
+    }
+
+    getCourses() {
         // There shouldn't be any memberships with missing courses
-        membershipsArray = membershipsArray.filter(({ courseId }) =>
-            coursesArray.find(({ id }) => courseId === id)
+        const memberships = this.memberships.filter(({ courseId }) =>
+            this.courses.find(({ id }) => courseId === id)
         );
 
         // Get courses belonging to a membership, and their memberships in those
         // courses
         return Promise.all(
-            membershipsArray.map((membership) =>
+            memberships.map((membership) =>
                 membership.enrollmentPromise.then((enrollment) => ({
-                    course: courses.find(
+                    course: this.courses.find(
                         ({ id }) => id === membership.courseId
                     ),
                     enrollment,
@@ -47,8 +52,8 @@ const MyCourses = {
                 );
                 throw error;
             });
-    },
-};
+    }
+}
 
 // Create courses instances
 const course1 = new Course(1, false);
@@ -81,11 +86,11 @@ const memberships = [
 ];
 
 // Call the courses method with the sample inputs
-MyCourses.courses(courses, memberships)
-    .then(function (result) {
-        console.log(result);
-        console.log(result.length);
-    })
+const myCourses = new MyCourses(courses, memberships);
+
+myCourses.getCourses().then((results) => {
+    console.log(results);
+});
 
 // Copy over models while figuring out the imports
 // Keep them at the bottom since they get hoisted
@@ -107,3 +112,4 @@ function Membership(userId, courseId, enrollmentPromise) {
     this.courseId = courseId;
     this.enrollmentPromise = enrollmentPromise;
 }
+
