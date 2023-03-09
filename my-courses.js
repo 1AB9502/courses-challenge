@@ -1,65 +1,55 @@
 const MyCourses = {
-  courses: (coursesArray, membershipsArray) => {
-    // There shouldn't be any memberships with missing courses, but just in
-    // case
-    membershipsArray = membershipsArray.filter(membership => {
-      const matchingCourse = coursesArray.find(course => {
-        return membership.courseId === course.id;
-      });
-      return matchingCourse !== undefined;
-    });
+    courses: (coursesArray, membershipsArray) => {
+        // There shouldn't be any memberships with missing courses
+        membershipsArray = membershipsArray.filter(({ courseId }) =>
+            coursesArray.find(({ id }) => courseId === id)
+        );
 
-    // Get courses belonging to a membership, and their memberships in those
-    // courses
-    return Promise.all(
-      membershipsArray.map(membership => {
-        return membership.enrollmentPromise.then(enrollment => {
-          return {
-            course: courses.find(course => {
-              return membership.courseId === course.id;
-            }),
-            enrollment: enrollment
-          };
+        // Get courses belonging to a membership, and their memberships in those
+        // courses
+        return Promise.all(
+            membershipsArray.map((membership) =>
+                membership.enrollmentPromise.then((enrollment) => ({
+                    course: courses.find(
+                        ({ id }) => id === membership.courseId
+                    ),
+                    enrollment,
+                }))
+            )
+        ).then((coursesRoles) => {
+            // Filter the courses that have not ended and the user's membership is unenrolled.
+            coursesRoles = coursesRoles
+                .reduce(
+                    (acc, courseRole) =>
+                        !courseRole.course.hasEnded
+                            ? acc.concat(courseRole)
+                            : acc,
+                    []
+                )
+                .concat(
+                    coursesRoles.reduce(
+                        (acc, courseRole) =>
+                            courseRole.enrollment.isUnenrolled()
+                                ? acc.concat(courseRole)
+                                : acc,
+                        []
+                    )
+                );
+
+            // Sort the courses so that unenrolled courses are at the top
+            return coursesRoles
+                .sort((courseA, courseB) =>
+                    courseA.enrollment.isUnenrolled() &&
+                    courseB.enrollment.isEnrolled
+                        ? -1
+                        : courseA.enrollment.isEnrolled &&
+                          courseB.enrollment.isUnenrolled()
+                        ? 1
+                        : 0
+                )
+                .map(({ course }) => course);
         });
-      })
-    ).then(coursesRoles => {
-      // Filter the courses to current courses
-      const currentCourses = coursesRoles.filter(cr => {
-        return !cr.course.hasEnded;
-      });
-
-      // Filter for courses where the user's membership is unenrolled
-      const unenrolledCourses = coursesRoles.filter(cr => {
-        return cr.enrollment.isUnenrolled();
-      });
-
-      // Merge the two
-      coursesRoles = currentCourses.concat(unenrolledCourses);
-
-      // Sort the courses so that unenrolled courses are at the top
-      return coursesRoles.sort((courseA, courseB) => {
-        // If A is unenrolled, but B is not, sort A higher
-        if (
-          courseA.enrollment.isUnenrolled() &&
-          !courseB.enrollment.isUnenrolled()
-        ) {
-          return -1;
-        }
-        // If B is unenrolled, but A is not, sort B higher
-        if (
-          !courseA.enrollment.isUnenrolled() &&
-          courseB.enrollment.isUnenrolled()
-        ) {
-          return 1;
-        }
-        // Otherwise don't sort
-        return 0;
-      }).map(cr => {
-        // Return the course
-        return cr.course;
-      });
-    });
-  }
+    },
 };
 
 // Create courses instances
@@ -71,27 +61,38 @@ const course3 = new Course(3, false);
 const enrollment1 = new Enrollment(true);
 const enrollment2 = new Enrollment(false);
 
-// Create test memberships
+// Create student test memberships
 const membership1 = new Membership(1, 1, Promise.resolve(enrollment1));
 const membership2 = new Membership(1, 2, Promise.resolve(enrollment2));
 const membership3 = new Membership(2, 1, Promise.resolve(enrollment1));
-const membership4 = new Membership(2, 2, Promise.resolve(enrollment2));
-const membership5 = new Membership(3, 3, Promise.resolve(enrollment1));
+const membership4 = new Membership(2, 3, Promise.resolve(enrollment2));
+const membership5 = new Membership(3, 2, Promise.resolve(enrollment1));
 const membership6 = new Membership(3, 3, Promise.resolve(enrollment2));
+// test membership with a missing course
+const membership7 = new Membership(3, null, Promise.resolve(enrollment2));
 
 const courses = [course1, course2, course3];
-const memberships = [membership1, membership2, membership3, membership4, membership5, membership6];
-
+const memberships = [
+    membership1,
+    membership2,
+    membership3,
+    membership4,
+    membership5,
+    membership6,
+    membership7,
+];
 
 // Call the courses method with the sample inputs
-MyCourses.courses(courses, memberships).then(function (result) {
-  console.log(result);
-}).catch(function (error) {
-  console.error(error);
-});
+MyCourses.courses(courses, memberships)
+    .then(function (result) {
+        console.log(result);
+    })
+    .catch(function (error) {
+        console.error(error);
+    });
 
 // Copy over models while figuring out the imports
-// Keep them at the bottom since they get hoisted 
+// Keep them at the bottom since they get hoisted
 function Course(id, hasEnded) {
     this.id = id;
     this.hasEnded = hasEnded;
@@ -100,9 +101,9 @@ function Course(id, hasEnded) {
 function Enrollment(isEnrolled) {
     this.isEnrolled = isEnrolled;
 
-    this.isUnenrolled = function() {
+    this.isUnenrolled = function () {
         return !this.isEnrolled;
-    }
+    };
 }
 
 function Membership(userId, courseId, enrollmentPromise) {
