@@ -19,20 +19,10 @@ const MyCourses = {
         ).then((coursesRoles) => {
             // Filter the courses that have not ended and the user's membership is unenrolled.
             coursesRoles = coursesRoles
-                .reduce(
-                    (acc, courseRole) =>
-                        !courseRole.course.hasEnded
-                            ? acc.concat(courseRole)
-                            : acc,
-                    []
-                )
+                .filter((courseRole) => !courseRole.course.hasEnded)
                 .concat(
-                    coursesRoles.reduce(
-                        (acc, courseRole) =>
-                            courseRole.enrollment.isUnenrolled()
-                                ? acc.concat(courseRole)
-                                : acc,
-                        []
+                    coursesRoles.filter((courseRole) =>
+                        courseRole.enrollment.isUnenrolled()
                     )
                 );
 
