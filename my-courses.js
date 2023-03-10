@@ -30,13 +30,12 @@ class MyCourses {
     }
 
     getCourses() {
-        // There shouldn't be any memberships with missing courses
+        // Filter out memberships with missing courses
         const memberships = this.memberships.filter(({ courseId }) =>
             this.courses.find(({ id }) => courseId === id)
         );
 
-        // Get courses belonging to a membership, and their memberships in those
-        // courses
+        // Get courses belonging to a membership, and their enrollments in those courses
         return Promise.all(
             memberships.map((membership) =>
                 membership.enrollmentPromise.then((enrollment) => ({
@@ -47,15 +46,15 @@ class MyCourses {
                 }))
             )
         )
-            .then((coursesRoles) => {
-                // Filter the courses that have not ended and combine with courses where user's membership is unenrolled.
+            .then((coursesEnrollments) => {
+                // Filter out courses that have ended and combine with courses where user's membership is unenrolled
                 const filteredCourses = coursesRoles
                     .filter((courseRole) => !courseRole.course.hasEnded)
                     .concat(
                         coursesRoles.filter((courseRole) =>
                             courseRole.enrollment.isUnenrolled()
                         )
-                    );
+                );
                 // Sort the courses so that unenrolled courses are at the top
                 const sortedCourses = filteredCourses.sort((courseA, courseB) =>
                     courseA.enrollment.isUnenrolled() &&
