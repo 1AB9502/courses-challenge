@@ -1,3 +1,28 @@
+class Course {
+    constructor(id, hasEnded) {
+        this.id = id;
+        this.hasEnded = hasEnded;
+    }
+}
+
+class Enrollment {
+    constructor(isEnrolled) {
+        this.isEnrolled = isEnrolled;
+    }
+
+    isUnenrolled() {
+        return !this.isEnrolled;
+    }
+}
+
+class Membership {
+    constructor(userId, courseId, enrollmentPromise) {
+        this.userId = userId;
+        this.courseId = courseId;
+        this.enrollmentPromise = enrollmentPromise;
+    }
+}
+
 class MyCourses {
     constructor(courses, memberships) {
         this.courses = courses;
@@ -23,7 +48,7 @@ class MyCourses {
             )
         )
             .then((coursesRoles) => {
-                // Filter the courses that have not ended and the user's membership is unenrolled.
+                // Filter the courses that have not ended and combine with courses where user's membership is unenrolled.
                 const filteredCourses = coursesRoles
                     .filter((courseRole) => !courseRole.course.hasEnded)
                     .concat(
@@ -31,7 +56,6 @@ class MyCourses {
                             courseRole.enrollment.isUnenrolled()
                         )
                     );
-
                 // Sort the courses so that unenrolled courses are at the top
                 const sortedCourses = filteredCourses.sort((courseA, courseB) =>
                     courseA.enrollment.isUnenrolled() &&
@@ -47,7 +71,7 @@ class MyCourses {
             })
             .catch((error) => {
                 console.error(
-                    "An error occurred while fetching course data:",
+                    "An error occurred while fetching membership data:",
                     error
                 );
                 throw error;
@@ -60,7 +84,7 @@ const course1 = new Course(1, false);
 const course2 = new Course(2, true);
 const course3 = new Course(3, false);
 
-// Create enrollments instances
+// Create enrollment instances
 const enrollment1 = new Enrollment(true);
 const enrollment2 = new Enrollment(false);
 
@@ -85,31 +109,7 @@ const memberships = [
     membership7,
 ];
 
-// Call the courses method with the sample inputs
+
+// Call the getCourses method with the sample inputs
 const myCourses = new MyCourses(courses, memberships);
-
-myCourses.getCourses().then((results) => {
-    console.log(results);
-});
-
-// Copy over models while figuring out the imports
-// Keep them at the bottom since they get hoisted
-function Course(id, hasEnded) {
-    this.id = id;
-    this.hasEnded = hasEnded;
-}
-
-function Enrollment(isEnrolled) {
-    this.isEnrolled = isEnrolled;
-
-    this.isUnenrolled = function () {
-        return !this.isEnrolled;
-    };
-}
-
-function Membership(userId, courseId, enrollmentPromise) {
-    this.userId = userId;
-    this.courseId = courseId;
-    this.enrollmentPromise = enrollmentPromise;
-}
-
+myCourses.getCourses().then(console.log);
