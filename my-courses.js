@@ -48,11 +48,11 @@ class MyCourses {
         )
             .then((coursesEnrollments) => {
                 // Filter out courses that have ended and combine with courses where user's membership is unenrolled
-                const filteredCourses = coursesRoles
-                    .filter((courseRole) => !courseRole.course.hasEnded)
+                const filteredCourses = coursesEnrollments
+                    .filter((coursesEnrollment) => !coursesEnrollment.course.hasEnded)
                     .concat(
-                        coursesRoles.filter((courseRole) =>
-                            courseRole.enrollment.isUnenrolled()
+                        coursesEnrollments.filter((coursesEnrollment) =>
+                            coursesEnrollment.enrollment.isUnenrolled()
                         )
                 );
                 // Sort the courses so that unenrolled courses are at the top
